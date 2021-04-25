@@ -32,7 +32,7 @@ async def on_message(message):
     if not "Admin" in user_roles and message.content in list(roles):
       await giverole(client, message.author, roles[message.content])
     elif "Admin" not in user_roles:
-      await message.channel.send("Entschuldigung, ich habe dich nicht verstanden. Gehörst du zu **Dresden** oder **Mittweida**?")
+      await message.channel.send("Entschuldigung, ich habe dich nicht verstanden. Gehörst du zu **Dresden** oder **Mittweida**?\nBitte wiederhole deine Eingabe und verwende dabei genau eine der Vorgaben.")
     else:
       await message.channel.send("Sehr witzig! Du bist ein Admin, du wirst gesondert behandelt!")
 
