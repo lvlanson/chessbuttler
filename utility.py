@@ -1,5 +1,5 @@
 class String:
-  move_help = "Schreib mir deinen Zug:\n "\
+  move_help = "Schreib mir deinen Zug:\n"\
         "Zuerst kommt einen Ausrufezeichen mit move `!move`. Danach kommt dein Zug. Wenn ein Bauer zieht schreibst du nur von Feld zu Feld mit Bindestrich. Wenn eine andere Figur setzt schreibst du den großen Anfangsbuchstaben der Figur und danach direkt von Feld zu Feld mit Bindestrich. Hier sind ein paar Beispiele. \n```Bauernzug: !move e2-e4\nSpringerzug: !move Se2-d4```"
   wrong_input_role = "Entschuldigung, ich habe dich nicht verstanden. Gehörst du zu **Dresden** oder **Mittweida**?\nBitte wiederhole deine Eingabe und verwende dabei genau eine der Vorgaben."
   you_are_admin = "Sehr witzig! Du bist ein Admin, du wirst gesondert behandelt!"
