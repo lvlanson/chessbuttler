@@ -1,14 +1,18 @@
 import discord
 import os
+import asyncio
+from lichess.api import ApiHttpError
 from discord.ext import commands
 from poll import Poll
 from utility import String
+from tournament import Tournament, UrlNotValidException
 
 bot = commands.Bot(command_prefix='!')
 
 client = discord.Client()
 
 polls = {}
+tournaments = {}
 
 @client.event
 async def on_ready():
@@ -22,8 +26,11 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+  print("check")
   user       = message.author
   user_roles = [arg.name for arg in user.roles]
+  author     = user.name
+  author_id  = user.id
   if user == client.user:
     return
   
@@ -37,28 +44,62 @@ async def on_message(message):
       await message.channel.send(String.you_are_admin)
   # Botfunktionen
   else:
+    # Befehl an den Bot
     if message.content.startswith("!"):
       cmd = message.content[1:]
+
+      # Abstimmung starten
       if cmd == "poll" and ("Admin" in user_roles or "Moderator" in user_roles):
         polls[message.channel.name] = Poll()
         await message.channel.send(String.move_help)
+
+      # Abstimmung beenden
       elif cmd == "endpoll" and ("Admin" in user_roles or "Moderator" in user_roles):
-        path = polls[message.channel.name].plot()
-        await message.channel.send(file=discord.File(path))
         try:
-          os.remove(path)
-        except Exception as e:
-          print(e)
-        del polls[message.channel.name]
+          path = polls[message.channel.name].plot()
+          await message.channel.send(file=discord.File(path))
+          try:
+            os.remove(path)
+          except Exception as e:
+            print(e)
+          del polls[message.channel.name]
+        
+        except KeyError:
+          await message.channel.send(String.no_vote_active)
+
+      # Zugangabe bei Abstimmung
       elif cmd.startswith("move") and message.channel.name in polls.keys():
         move = cmd[len("move"):].strip()
-        author = user.name
-        author_id = user.id
         await message.delete()
         if len(move) == 0 or not polls[message.channel.name].add_vote(move, author):
           await message.channel.send(f"<@{author_id}> {String.illegal_vote}")
         else:
           await message.channel.send(f"<@{author_id}> {String.legal_vote}")
+
+      # Turnier starten
+      elif cmd.startswith("tournament") and message.channel.name not in tournaments.keys():
+        await message.delete()
+        url = cmd[len("tournament"):].strip()
+        try:
+          tournaments[message.channel.name] = Tournament(url)
+          tourn = tournaments[message.channel.name]
+          msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}."
+          await message.channel.send(msg)
+          print(tourn.execution_time() +  30)
+          await asyncio.sleep(tourn.execution_time() +  30)
+          path = tourn.plot_result()
+          await message.channel.send(String.tournament_end)
+          await message.channel.send(file=discord.File(path))
+          try:
+            os.remove(path)
+          except Exception as e:
+            print(e)
+          del tournaments[message.channel.name]
+        except UrlNotValidException as e:
+          await message.channel.send(e.message)
+        except ApiHttpError:
+          await message.channel.send("Etwas scheint mit der URL nicht zu stimmen. Ich finde da kein Turnier.")
+
 
 @bot.command(pass_context=True)
 async def giverole(ctx, user: discord.Member, role: discord.Role):
