@@ -26,8 +26,8 @@ class Tournament:
         Gibt zurück wann das Turnier vom jetzigen Zeitpunkt in Sekunden beendet ist.
         """
         now = datetime.datetime.now()
-        exec_time = self.endtime - now if (self.endtime-now).total_seconds() > 0 else 0 
-        return exec_time.seconds
+        exec_time = (self.endtime - now).seconds if (self.endtime-now).total_seconds() > 0 else 0 
+        return exec_time
 
     @property
     def results(self):
