@@ -6,3 +6,5 @@ class String:
   illegal_vote = "Ich habe deinen Zug nicht verstanden. So sollte ein Zugvorschlag beispielhaft aussehen:\n"\
                   "\n```Bauernzug: !move e2-e4\nSpringerzug: !move Se2-d4```"
   legal_vote = "Danke, ich habe mir deinen Zug notiert."
+  no_vote_active = "Entschuldigung, aber es ist gerade keine Abstimmung aktiv."
+  tournament_end = "Das Turnier ist beendet. Ich zeige euch die Ergebnisse."
