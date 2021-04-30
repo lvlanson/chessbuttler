@@ -1,117 +1,110 @@
-import lichess.api
-import datetime
-from dateutil.parser import parse
-import matplotlib.pyplot as plt
-import numpy as np
-import tempfile
+import discord
+import os
+import asyncio
+from lichess.api import ApiHttpError
+from discord.ext import commands
+from poll import Poll
+from utility import String
+from lichesshelper import Tournament, UrlNotValidException, LichessUser
 
-class Tournament:
+bot = commands.Bot(command_prefix='!')
 
-    def __init__(self, url: str):
-        pos = url.rfind("/")
-        if pos == -1:
-            raise UrlNotValidException
-        self.t_id = url[url.rfind("/")+1:]    
+client = discord.Client()
 
-        # Turnierobjekt
-        self.tournament         = lichess.api.tournament(self.t_id)
-        
-        # Zeitdatenm zum Turnier
-        self.runtime: datetime  = datetime.timedelta(minutes=self.tournament["minutes"])
-        self.date: datetime     = parse(self.tournament["startsAt"])
-        self.endtime: datetime  = (self.date + self.runtime).replace(tzinfo=None)
+polls = {}
+tournaments = {}
 
-    def execution_time(self):
-        """
-        Gibt zurück wann das Turnier vom jetzigen Zeitpunkt in Sekunden beendet ist.
-        """
-        now = datetime.datetime.now()
-        exec_time = (self.endtime - now).seconds if (self.endtime-now).total_seconds() > 0 else 0 
-        return exec_time
+@client.event
+async def on_ready():
+  global roles
+  roles_full = client.guilds[0].roles
+  ignore = ["@everyone", "ButtlerBot", "Moderator", "Admin"]
+  roles = {}
+  for role in roles_full:
+    if role.name not in ignore:
+      roles[role.name] = role
 
-    @property
-    def results(self):
-        return self.tournament["standing"]["players"]
+@client.event
+async def on_message(message):
+  user       = message.author
+  user_roles = [arg.name for arg in user.roles]
+  author     = user.name
+  author_id  = user.id
+  if user == client.user:
+    return
+  
+  # Neue Mitglieder zuordnen
+  if message.channel.name == "neue_mitglieder":
+    if not "Admin" in user_roles and message.content in list(roles):
+      await giverole(client, message.author, roles[message.content])
+    elif "Admin" not in user_roles:
+      await message.channel.send(String.wrong_input_role)
+    else:
+      await message.channel.send(String.you_are_admin)
+  # Botfunktionen
+  else:
+    # Befehl an den Bot
+    if message.content.startswith("!"):
+      cmd = message.content[1:]
 
-    @property
-    def name(self):
-        return self.tournament["fullName"]
+      # Abstimmung starten
+      if cmd == "poll" and ("Admin" in user_roles or "Moderator" in user_roles):
+        polls[message.channel.name] = Poll()
+        await message.channel.send(String.move_help)
 
-    @property
-    def description(self):
-        return self.tournament["description"]
-
-    @property
-    def duration(self):
-        return f"Das Turnier wird für eine Dauer von **{datetime.datetime.utcfromtimestamp(self.runtime.seconds).strftime('%H:%M')}** Stunden laufen."
-
-    @property
-    def clock(self):
-        t_format = self.tournament["clock"]
-        if t_format["limit"] > 3600 and t_format["limit"] % 60 != 0:
-            bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Hh:%Mm:%Ss')
-        elif t_format["limit"] > 3600 and t_format["limit"] % 60 == 0:
-            bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Hh:%Mm')
-        elif t_format["limit"] % 60 == 0:
-            bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%M Minuten')
-        else:
-            bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Mm:%Ss')
-        return f"Das Zeitformat für ein Spiel ist **{bedenkzeit}** mit einem Inkrement von **{t_format['increment']}** Sekunden je Zug."
-    
-    @property
-    def startsAt(self):
-        return f"Das Turnier startet **{self.date.strftime('%d.%m.%Y um %H:%M')}**."
-
-    def plot_result(self):
-        results = lichess.api.tournament_standings(self.t_id)
-        players = []
-        score = []
-        for item in results:
-          players.insert(0,item["name"])
-          score.insert(0, item["score"])
-        
-        if len(players) < 0:
-            player_index = []
-        else:
-            player_index = np.arange(len(players))
-        
-        for item in results:
-            players.insert(0, item["name"])
-            score.insert(0, item["score"])
-        height = len(players)
-        plt.figure(figsize=(15, height))
-        plt.rcParams.update({'font.size': 22})
-        plt.barh(player_index, score, align='center', alpha=0.5)
-        plt.yticks(player_index, players)
-        plt.xlabel("Score")
-        plt.title(self.name)
-        tmp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
-
-        for index, value in enumerate(score):
-            plt.text(value, index, str(value))
-
-        plt.savefig(tmp_file, dpi=300, bbox_inches="tight")
-        return tmp_file
-
-
-class UrlNotValidException(BaseException):
-    message = "Die URL funktioniert nicht. Bitte gib die vollständige URL zum Turnier an."
-
-
-class LichessUser:
-
-  def __init__(self, user: str):
-    self.user = lichess.api.user(user)
-
-  def get_data(self):
-    data = f"__Name: {self.user['username']}__\n\n"
-    for category, perf in self.user["perfs"].items():
-      try:
-        data += f"**{category}**: {perf['rating']} (Rating)\n"
-      except KeyError:
+      # Abstimmung beenden
+      elif cmd == "endpoll" and ("Admin" in user_roles or "Moderator" in user_roles):
         try:
-          data += f"**{category}**: {perf['score']} (Score)\n"
-        except:
-          pass
-    data.strip()
-    return data
+          path = polls[message.channel.name].plot()
+          await message.channel.send(file=discord.File(path))
+          try:
+            os.remove(path)
+          except Exception as e:
+            print(e)
+          del polls[message.channel.name]
+        
+        except KeyError:
+          await message.channel.send(String.no_vote_active)
+
+      # Zugangabe bei Abstimmung
+      elif cmd.startswith("move") and message.channel.name in polls.keys():
+        move = cmd[len("move"):].strip()
+        await message.delete()
+        if len(move) == 0 or not polls[message.channel.name].add_vote(move, author):
+          await message.channel.send(f"<@{author_id}> {String.illegal_vote}")
+        else:
+          await message.channel.send(f"<@{author_id}> {String.legal_vote}")
+
+      # Turnier starten
+      elif cmd.startswith("tournament") and message.channel.name not in tournaments.keys():
+        await message.delete()
+        url = cmd[len("tournament"):].strip()
+        try:
+          tournaments[message.channel.name] = Tournament(url)
+          tourn = tournaments[message.channel.name]
+          msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}."
+          await message.channel.send(msg)
+          await asyncio.sleep(tourn.execution_time() +  10)
+          path = tourn.plot_result()
+          await message.channel.send(String.tournament_end)
+          await message.channel.send(file=discord.File(path))
+          try:
+            os.remove(path)
+          except Exception as e:
+            print(e)
+          del tournaments[message.channel.name]
+        except UrlNotValidException as e:
+          await message.channel.send(e.message)
+        except ApiHttpError:
+          await message.channel.send("Etwas scheint mit der URL nicht zu stimmen. Ich finde da kein Turnier.")
+      elif cmd.startswith("user"):
+        lc_user = cmd[len("user"):].strip()
+        lc_user = LichessUser(lc_user)
+        await message.channel.send(lc_user.get_data())
+
+
+@bot.command(pass_context=True)
+async def giverole(ctx, user: discord.Member, role: discord.Role):
+    await user.add_roles(role)
+
+client.run(os.getenv('TOKEN'))

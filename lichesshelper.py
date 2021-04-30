@@ -79,7 +79,7 @@ class Tournament:
             players.insert(0, item["name"])
             score.insert(0, item["score"])
         height = len(players)
-        plt.figure(figsize=(15, 20))
+        plt.figure(figsize=(15, height))
         plt.rcParams.update({'font.size': 22})
         plt.barh(player_index, score, align='center', alpha=0.5)
         plt.yticks(player_index, players)
