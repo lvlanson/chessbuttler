@@ -11,10 +11,10 @@ class Tournament:
         pos = url.rfind("/")
         if pos == -1:
             raise UrlNotValidException
-        t_id = url[url.rfind("/")+1:]    
+        self.t_id = url[url.rfind("/")+1:]    
 
         # Turnierobjekt
-        self.tournament         = lichess.api.tournament(t_id)
+        self.tournament         = lichess.api.tournament(self.t_id)
         
         # Zeitdatenm zum Turnier
         self.runtime: datetime  = datetime.timedelta(minutes=self.tournament["minutes"])
@@ -44,36 +44,6 @@ class Tournament:
     @property
     def duration(self):
         return f"Das Turnier wird für eine Dauer von **{datetime.datetime.utcfromtimestamp(self.runtime.seconds).strftime('%H:%M')}** Stunden laufen."
-    
-    def plot_result(self):
-        results = self.tournament["standing"]["players"]
-        
-        if len(results) < 0:
-            player_index = []
-        else:
-            player_index = np.arange(len(results))
-        
-        players = []
-        score = []
-        for item in results:
-            print(item)
-            players.insert(0, item["name"])
-            score.insert(0, item["score"])
-        plt.figure(figsize=(15,8))
-        plt.rcParams.update({'font.size': 22})
-        plt.barh(player_index, score, align='center', alpha=0.5)
-        plt.yticks(player_index, players)
-        plt.xlabel("Score")
-        if len(score) > 0:
-          plt.xticks(np.arange(max(score)+1))
-        plt.title(self.name)
-        tmp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
-
-        for index, value in enumerate(score):
-            plt.text(value, index, str(value))
-
-        plt.savefig(tmp_file, dpi=300)
-        return tmp_file
 
     @property
     def clock(self):
@@ -93,36 +63,59 @@ class Tournament:
         return f"Das Turnier startet **{self.date.strftime('%d.%m.%Y um %H:%M')}**."
 
     def plot_result(self):
-        results = self.tournament["standing"]["players"]
-        
-        if len(results) < 0:
-            player_index = []
-        else:
-            player_index = np.arange(len(results))
-        
+        results = lichess.api.tournament_standings(self.t_id)
         players = []
         score = []
         for item in results:
-            print(item)
+          players.insert(0,item["name"])
+          score.insert(0, item["score"])
+        
+        if len(players) < 0:
+            player_index = []
+        else:
+            player_index = np.arange(len(players))
+        
+        for item in results:
             players.insert(0, item["name"])
             score.insert(0, item["score"])
-        plt.figure(figsize=(15,8))
+        height = len(players)
+        plt.figure(figsize=(15, height))
         plt.rcParams.update({'font.size': 22})
         plt.barh(player_index, score, align='center', alpha=0.5)
         plt.yticks(player_index, players)
         plt.xlabel("Score")
-        if len(score) > 0:
-          plt.xticks(np.arange(max(score)+1))
         plt.title(self.name)
         tmp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
 
         for index, value in enumerate(score):
             plt.text(value, index, str(value))
 
-        plt.savefig(tmp_file, dpi=300)
+        plt.savefig(tmp_file, dpi=300, bbox_inches="tight")
         return tmp_file
+
 
 class UrlNotValidException(BaseException):
     message = "Die URL funktioniert nicht. Bitte gib die vollständige URL zum Turnier an."
 
-t = Tournament("https://lichess.org/tournament/5KfBYIOB")
+
+class LichessUser:
+
+  def __init__(self, user: str):
+    self.user = lichess.api.user(user)
+
+  def get_data(self):
+    data = f"__Name: {self.user['username']}__\n\n"
+    for category, perf in self.user["perfs"].items():
+      try:
+        data += f"**{category}**: {perf['rating']} (Rating)\n"
+      except KeyError:
+        try:
+          data += f"**{category}**: {perf['score']} (Score)\n"
+        except:
+          pass
+    data.strip()
+    return data
+
+if __name__ == "__main__":
+    t = Tournament("https://lichess.org/tournament/N9fapapb")
+    print(t.plot_result())
