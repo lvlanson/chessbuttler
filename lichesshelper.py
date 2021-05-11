@@ -60,7 +60,7 @@ class Tournament:
         con = lichess.api.tournament_standings(self.t_id)
         output  = "```"
         maxnamelen  = 0
-        maxscorelen = 0
+        maxscorelen = len("Punkte")
         results = list()
         for item in con:
           results.append(item)
@@ -70,6 +70,11 @@ class Tournament:
             maxnamelen = len(item["name"])
           if len(str(item["score"])) > maxscorelen:
             maxscorelen = len(str(item["sheet"]["total"]))
+        
+        output += f"{'Platz':6} | {'Name':^{maxnamelen}} | {'Punkte':^{maxscorelen}} | Spielpunkte\n"
+        for _ in range(len(output)):
+          output += "-"
+        output += "\n"
         for item in results:
           listed_scores = item["sheet"]["scores"]
           scores = ""
@@ -80,14 +85,14 @@ class Tournament:
             else:
               scores += str(score) + " "
           scores  = scores[:-1]
-          newline = f"{item['rank']:5} | {item['name']:^{maxnamelen}} | {item['sheet']['total']:^{maxscorelen}} | {scores}\n" 
+          newline = f"{item['rank']:6} | {item['name']:^{maxnamelen}} | {item['sheet']['total']:^{maxscorelen}} | {scores}\n" 
 
           if len(output) + len(newline) > 1997:
             output += "```"
             yield output
             output = "```" + newline
           else:
-            output += f"{item['rank']:5} | {item['name']:^{maxnamelen}} | {item['score']:^{maxscorelen}} | {scores}\n"
+            output += f"{item['rank']:6} | {item['name']:^{maxnamelen}} | {item['score']:^{maxscorelen}} | {scores}\n"
         output += "```"
         yield output
 
