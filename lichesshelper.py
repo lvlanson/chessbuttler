@@ -1,9 +1,6 @@
 import lichess.api
 import datetime
 from dateutil.parser import parse
-import matplotlib.pyplot as plt
-import numpy as np
-import tempfile
 
 class Tournament:
 
@@ -21,7 +18,7 @@ class Tournament:
         self.date: datetime     = parse(self.tournament["startsAt"])
         self.endtime: datetime  = (self.date + self.runtime).replace(tzinfo=None)
 
-    def execution_time(self):
+    def execution_time(self) -> int:
         """
         Gibt zurück wann das Turnier vom jetzigen Zeitpunkt in Sekunden beendet ist.
         """
@@ -30,23 +27,19 @@ class Tournament:
         return exec_time
 
     @property
-    def results(self):
-        return self.tournament["standing"]["players"]
-
-    @property
-    def name(self):
+    def name(self) -> str:
         return self.tournament["fullName"]
 
     @property
-    def description(self):
+    def description(self) -> str:
         return self.tournament["description"]
 
     @property
-    def duration(self):
+    def duration(self) -> str:
         return f"Das Turnier wird für eine Dauer von **{datetime.datetime.utcfromtimestamp(self.runtime.seconds).strftime('%H:%M')}** Stunden laufen."
 
     @property
-    def clock(self):
+    def clock(self) -> str:
         t_format = self.tournament["clock"]
         if t_format["limit"] > 3600 and t_format["limit"] % 60 != 0:
             bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Hh:%Mm:%Ss')
@@ -59,39 +52,44 @@ class Tournament:
         return f"Das Zeitformat für ein Spiel ist **{bedenkzeit}** mit einem Inkrement von **{t_format['increment']}** Sekunden je Zug."
     
     @property
-    def startsAt(self):
+    def startsAt(self) -> str:
         return f"Das Turnier startet **{self.date.strftime('%d.%m.%Y um %H:%M')}**."
 
-    def plot_result(self):
-        results = lichess.api.tournament_standings(self.t_id)
-        players = []
-        score = []
+    @property
+    def results(self) -> list:
+        con = lichess.api.tournament_standings(self.t_id)
+        output  = "```"
+        maxnamelen  = 0
+        maxscorelen = 0
+        results = list()
+        for item in con:
+          results.append(item)
         for item in results:
-          players.insert(0,item["name"])
-          score.insert(0, item["score"])
-        
-        if len(players) < 0:
-            player_index = []
-        else:
-            player_index = np.arange(len(players))
-        
+          if len(item["name"]) > maxnamelen:
+            maxnamelen = len(item["name"])
+          if len(str(item["score"])) > maxscorelen:
+            maxscorelen = len(str(item["score"]))
         for item in results:
-            players.insert(0, item["name"])
-            score.insert(0, item["score"])
-        height = len(players)
-        plt.figure(figsize=(15, height))
-        plt.rcParams.update({'font.size': 22})
-        plt.barh(player_index, score, align='center', alpha=0.5)
-        plt.yticks(player_index, players)
-        plt.xlabel("Score")
-        plt.title(self.name)
-        tmp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
+          listed_scores = item["sheet"]["scores"]
+          scores = ""
+          for score in listed_scores:
 
-        for index, value in enumerate(score):
-            plt.text(value, index, str(value))
+            if type(score) == list:
+              for s in score:
+                scores += str(s) + " "
+            else:
+              scores += str(score) + " "
+          scores  = scores[:-1]
+          newline = f"{item['rank']:5} | {item['name']:^{maxnamelen}} | {item['score']:^{maxscorelen}} | {scores}\n" 
 
-        plt.savefig(tmp_file, dpi=300, bbox_inches="tight")
-        return tmp_file
+          if len(output) + len(newline) > 2000:
+            output += "```"
+            yield output
+            output = "```" + newline
+          else:
+            output += f"{item['rank']:5} | {item['name']:^{maxnamelen}} | {item['score']:^{maxscorelen}} | {scores}\n"
+        output += "```"
+        yield output
 
 
 class UrlNotValidException(BaseException):
@@ -115,7 +113,3 @@ class LichessUser:
           pass
     data.strip()
     return data
-
-if __name__ == "__main__":
-    t = Tournament("https://lichess.org/tournament/N9fapapb")
-    print(t.plot_result())

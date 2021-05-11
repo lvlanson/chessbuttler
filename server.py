@@ -84,14 +84,10 @@ async def on_message(message):
           tourn = tournaments[message.channel.name]
           msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}."
           await message.channel.send(msg)
-          await asyncio.sleep(tourn.execution_time() +  10)
-          path = tourn.plot_result()
+          await asyncio.sleep(tourn.execution_time() +  5)
           await message.channel.send(String.tournament_end)
-          await message.channel.send(file=discord.File(path))
-          try:
-            os.remove(path)
-          except Exception as e:
-            print(e)
+          for result in tourn.results:
+            await message.channel.send(result)
           del tournaments[message.channel.name]
         except UrlNotValidException as e:
           await message.channel.send(e.message)
