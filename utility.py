@@ -8,4 +8,4 @@ class String:
   legal_vote = "Danke, ich habe mir deinen Zug notiert."
   no_vote_active = "Entschuldigung, aber es ist gerade keine Abstimmung aktiv."
   tournament_end = "Das Turnier ist beendet. Ich schreibe noch schnell die Ergebnisse ab und stelle sie gleich rein."
-  tournament_url_http_error = "Die Turnier URL muss mit `http://` oder `https://` beginnen"
+  tournament_url_http_error = "Die Turnier URL muss mit `http://` oder `https://` beginnen."

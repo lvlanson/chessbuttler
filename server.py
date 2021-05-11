@@ -78,7 +78,7 @@ async def on_message(message):
       elif cmd.startswith("tournament"):
         await message.delete()
         url = cmd[len("tournament"):].strip()
-        if not url.startswith("http://") or not url.startswith("https://"):
+        if not url.startswith("http://") and not url.startswith("https://"):
           await message.channel.send(String.tournament_url_http_error)
         else:
           try:

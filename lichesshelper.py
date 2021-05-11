@@ -76,7 +76,7 @@ class Tournament:
       else:
           bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Mm:%Ss')
       
-      return (bedenkzeit, t_format['increment'])
+      return (bedenkzeit, str(t_format['increment']) + " Sekunden")
   
     @property
     def startsAt(self) -> str:
@@ -88,6 +88,7 @@ class Tournament:
         output  = "```"
         maxnamelen  = 0
         maxscorelen = len("Punkte")
+        maxratinglen = len("Rating")
         results = list()
         for item in con:
           results.append(item)
@@ -98,7 +99,7 @@ class Tournament:
           if len(str(item["score"])) > maxscorelen:
             maxscorelen = len(str(item["sheet"]["total"]))
         
-        output += f"{'Platz':6} | {'Name':^{maxnamelen}} | {'Punkte':^{maxscorelen}} | Spielpunkte\n"
+        output += f"{'Platz':6} | {'Name':^{maxnamelen}} | {'Rating':^{maxratinglen}} | {'Punkte':^{maxscorelen}} | Spielpunkte\n"
         for _ in range(len(output)):
           output += "-"
         output += "\n"
@@ -119,7 +120,7 @@ class Tournament:
             yield output
             output = "```" + newline
           else:
-            output += f"{item['rank']:6} | {item['name']:^{maxnamelen}} | {item['score']:^{maxscorelen}} | {scores}\n"
+            output += f"{item['rank']:6} | {item['name']:^{maxnamelen}} | {item['rating']:^{maxratinglen}} | {item['score']:^{maxscorelen}} | {scores}\n"
         output += "```"
         yield output
 
