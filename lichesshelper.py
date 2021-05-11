@@ -32,11 +32,23 @@ class Tournament:
 
     @property
     def description(self) -> str:
-        return self.tournament["description"]
+      description = ""
+      try:
+        description = self.tournament["description"]
+      except KeyError:
+        description = f"Start: {self.date.strftime('%d.%m.%Y um %H:%M')}\n"\
+                      f"Dauer: {self.__duration}\n"\
+                      f"Zeitmodus: {self.__clock}"
+      finally:
+        return description
 
     @property
     def duration(self) -> str:
         return f"Das Turnier wird für eine Dauer von **{datetime.datetime.utcfromtimestamp(self.runtime.seconds).strftime('%H:%M')}** Stunden laufen."
+    
+    @property
+    def __duration(self) -> str:
+        return datetime.datetime.utcfromtimestamp(self.runtime.seconds).strftime('%H:%M')
 
     @property
     def clock(self) -> str:
@@ -51,6 +63,20 @@ class Tournament:
             bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Mm:%Ss')
         return f"Das Zeitformat für ein Spiel ist **{bedenkzeit}** mit einem Inkrement von **{t_format['increment']}** Sekunden je Zug."
     
+    @property
+    def __clock(self) -> str:
+      t_format = self.tournament["clock"]
+      if t_format["limit"] > 3600 and t_format["limit"] % 60 != 0:
+          bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Hh:%Mm:%Ss')
+      elif t_format["limit"] > 3600 and t_format["limit"] % 60 == 0:
+          bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Hh:%Mm')
+      elif t_format["limit"] % 60 == 0:
+          bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%M Minuten')
+      else:
+          bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Mm:%Ss')
+      
+      return bedenkzeit
+  
     @property
     def startsAt(self) -> str:
         return f"Das Turnier startet **{self.date.strftime('%d.%m.%Y um %H:%M')}**."

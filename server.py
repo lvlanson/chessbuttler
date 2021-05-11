@@ -82,13 +82,17 @@ async def on_message(message):
         try:
           tournaments[message.channel.name] = Tournament(url)
           tourn = tournaments[message.channel.name]
-          msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}."
-          await message.channel.send(msg)
-          await asyncio.sleep(tourn.execution_time() +  5)
-          await message.channel.send(String.tournament_end)
+
+          print(tourn.description)
+
+          embed=discord.Embed(title=tourn.name, url=url, description=tourn.description) # Vorschaufenster
+          msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}." # Nachricht bauen
+          await message.channel.send(msg, embed=embed) # Nachricht schicken / Turnier ankündigen
+          await asyncio.sleep(tourn.execution_time() +  5) # Warten bis das Turnier beendet ist
+          await message.channel.send(String.tournament_end) # Turnier beendet Nachricht senden
           for result in tourn.results:
-            await message.channel.send(result)
-          del tournaments[message.channel.name]
+            await message.channel.send(result) # Turnier Ergebnisse veröffentlichen
+          del tournaments[message.channel.name] # Turnier entfernen
         except UrlNotValidException as e:
           await message.channel.send(e.message)
         except ApiHttpError:
