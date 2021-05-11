@@ -12,7 +12,6 @@ bot = commands.Bot(command_prefix='!')
 client = discord.Client()
 
 polls = {}
-tournaments = {}
 
 @client.event
 async def on_ready():
@@ -76,27 +75,26 @@ async def on_message(message):
           await message.channel.send(f"<@{author_id}> {String.legal_vote}")
 
       # Turnier starten
-      elif cmd.startswith("tournament") and message.channel.name not in tournaments.keys():
+      elif cmd.startswith("tournament"):
         await message.delete()
         url = cmd[len("tournament"):].strip()
-        try:
-          tournaments[message.channel.name] = Tournament(url)
-          tourn = tournaments[message.channel.name]
+        if not url.startswith("http://") or not url.startswith("https://"):
+          await message.channel.send(String.tournament_url_http_error)
+        else:
+          try:
+            tourn = Tournament(url)
 
-          print(tourn.description)
-
-          embed=discord.Embed(title=tourn.name, url=url, description=tourn.description) # Vorschaufenster
-          msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}." # Nachricht bauen
-          await message.channel.send(msg, embed=embed) # Nachricht schicken / Turnier ankündigen
-          await asyncio.sleep(tourn.execution_time() +  5) # Warten bis das Turnier beendet ist
-          await message.channel.send(String.tournament_end) # Turnier beendet Nachricht senden
-          for result in tourn.results:
-            await message.channel.send(result) # Turnier Ergebnisse veröffentlichen
-          del tournaments[message.channel.name] # Turnier entfernen
-        except UrlNotValidException as e:
-          await message.channel.send(e.message)
-        except ApiHttpError:
-          await message.channel.send("Etwas scheint mit der URL nicht zu stimmen. Ich finde da kein Turnier.")
+            embed=discord.Embed(title=tourn.name, url=url, description=tourn.description) # Vorschaufenster
+            msg = f"{author} hat {tourn.name} erstellt. {tourn.duration} {tourn.clock} {tourn.startsAt} Das Turnier findet ihr unter folgendem Link {url}." # Nachricht bauen
+            await message.channel.send(msg, embed=embed) # Nachricht schicken / Turnier ankündigen
+            await asyncio.sleep(tourn.execution_time() +  5) # Warten bis das Turnier beendet ist
+            await message.channel.send(String.tournament_end) # Turnier beendet Nachricht senden
+            for result in tourn.results:
+              await message.channel.send(result) # Turnier Ergebnisse veröffentlichen
+          except UrlNotValidException as e:
+            await message.channel.send(e.message)
+          except ApiHttpError:
+            await message.channel.send("Etwas scheint mit der URL nicht zu stimmen. Ich finde da kein Turnier.")
       elif cmd.startswith("user"):
         lc_user = cmd[len("user"):].strip()
         lc_user = LichessUser(lc_user)

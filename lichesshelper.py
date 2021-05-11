@@ -36,9 +36,11 @@ class Tournament:
       try:
         description = self.tournament["description"]
       except KeyError:
+        bedenkzeit, inkrement = self.__clock()
         description = f"Start: {self.date.strftime('%d.%m.%Y um %H:%M')}\n"\
                       f"Dauer: {self.__duration}\n"\
-                      f"Zeitmodus: {self.__clock}"
+                      f"Zeitmodus: {bedenkzeit}\n"\
+                      f"Inkrement: {inkrement}"
       finally:
         return description
 
@@ -63,7 +65,6 @@ class Tournament:
             bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Mm:%Ss')
         return f"Das Zeitformat für ein Spiel ist **{bedenkzeit}** mit einem Inkrement von **{t_format['increment']}** Sekunden je Zug."
     
-    @property
     def __clock(self) -> str:
       t_format = self.tournament["clock"]
       if t_format["limit"] > 3600 and t_format["limit"] % 60 != 0:
@@ -75,7 +76,7 @@ class Tournament:
       else:
           bedenkzeit = datetime.datetime.utcfromtimestamp(t_format['limit']).strftime('%Mm:%Ss')
       
-      return bedenkzeit
+      return (bedenkzeit, t_format['increment'])
   
     @property
     def startsAt(self) -> str:
