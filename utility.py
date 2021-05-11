@@ -7,4 +7,4 @@ class String:
                   "\n```Bauernzug: !move e2-e4\nSpringerzug: !move Se2-d4```"
   legal_vote = "Danke, ich habe mir deinen Zug notiert."
   no_vote_active = "Entschuldigung, aber es ist gerade keine Abstimmung aktiv."
-  tournament_end = "Das Turnier ist beendet. Ich zeige euch die Ergebnisse."
+  tournament_end = "Das Turnier ist beendet. Ich schreibe noch schnell die Ergebnisse ab und stelle sie gleich rein."

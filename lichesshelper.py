@@ -65,24 +65,24 @@ class Tournament:
         for item in con:
           results.append(item)
         for item in results:
+          print(item)
           if len(item["name"]) > maxnamelen:
             maxnamelen = len(item["name"])
           if len(str(item["score"])) > maxscorelen:
-            maxscorelen = len(str(item["score"]))
+            maxscorelen = len(str(item["sheet"]["total"]))
         for item in results:
           listed_scores = item["sheet"]["scores"]
           scores = ""
           for score in listed_scores:
 
             if type(score) == list:
-              for s in score:
-                scores += str(s) + " "
+              scores += str(score[0]) + " "
             else:
               scores += str(score) + " "
           scores  = scores[:-1]
-          newline = f"{item['rank']:5} | {item['name']:^{maxnamelen}} | {item['score']:^{maxscorelen}} | {scores}\n" 
+          newline = f"{item['rank']:5} | {item['name']:^{maxnamelen}} | {item['sheet']['total']:^{maxscorelen}} | {scores}\n" 
 
-          if len(output) + len(newline) > 2000:
+          if len(output) + len(newline) > 1997:
             output += "```"
             yield output
             output = "```" + newline
