@@ -160,7 +160,10 @@ class VS:
     print("VS is called, searching Data")
     try:
       self.caller = caller.split("-")[1].strip()
+      if "[" in self.caller:
+        self.caller = self.caller[:self.caller.find("[")]
     except IndexError:
+      print(f"Nickname {caller} not valid.")
       raise AuthorNameNotValidException
 
     self.user = lichess.api.user_games(self.caller)
