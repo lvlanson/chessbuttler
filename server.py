@@ -107,6 +107,7 @@ async def on_message(message):
       elif cmd.startswith("vs"):
         lc_user = cmd[len("vs"):].strip()
         try:
+          await message.channel.send(f"Ich suche nach allen Spielen gegen {lc_user}. Das kann ein paar Minuten dauern.")
           vc = VS(nickname, lc_user)
           await message.channel.send(vc.results)
         except UserNotValidException as e:
