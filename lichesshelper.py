@@ -128,6 +128,11 @@ class Tournament:
 class UrlNotValidException(BaseException):
     message = "Die URL funktioniert nicht. Bitte gib die vollständige URL zum Turnier an."
 
+class UserNotValidException(BaseException):
+  message = "Ich kann den User nicht finden. Bitte schau nach, ob er auch richtig geschrieben ist."
+
+class AuthorNameNotValidException(BaseException):
+  message = "Hast du deinen Namen an die Namenskonventionen des Servers angepasst? Mir gelingt es nicht deinen Namen herauszulesen"
 
 class LichessUser:
 
@@ -146,3 +151,65 @@ class LichessUser:
           pass
     data.strip()
     return data
+
+class VS:
+
+  def __init__(self, caller: str, enemy:str):
+    self.enemy = enemy
+    self.caller = "" 
+    print("VS is called, searching Data")
+    try:
+      self.caller = caller.split("-")[1].strip()
+    except IndexError:
+      raise AuthorNameNotValidException
+
+    self.user = lichess.api.user_games(self.caller)
+
+    self.wins = dict()
+    self.losses = dict()
+
+    for item in self.user:
+      try:
+        if item["players"]["white"]["user"]["name"].lower() == enemy.lower():
+          if item["winner"] == "white":
+            if item["speed"] in self.losses:
+              self.losses[item["speed"]] += 1
+            else:
+              self.losses[item["speed"]] = 1
+          else:
+            if item["speed"] in self.wins:
+              self.wins[item["speed"]] += 1
+            else:
+              self.wins[item["speed"]] = 1
+
+        elif item["players"]["black"]["user"]["name"].lower() == enemy.lower():
+          if item["winner"] == "white":
+            if item["speed"] in self.wins:
+              self.wins[item["speed"]] += 1
+            else:
+              self.wins[item["speed"]] = 1
+          else:
+            if item["speed"] in self.losses:
+              self.losses[item["speed"]] += 1
+            else:
+              self.losses[item["speed"]] = 1
+      except:
+        # Spiele mit unvollständigen Daten ignorieren
+        pass
+    
+  @property
+  def results(self) -> str:
+    keys = self.wins.keys()
+
+    len_keys = max([len(x) for x in keys])
+    len_keys = len("Disziplin") if len("Disziplin")>len_keys else len_keys
+    len_call = len(self.caller)
+    len_enem = len(self.enemy)
+
+    output = f"``` {'Disziplin':^{len_keys}} | {self.caller:^{len_call}} | {self.enemy:^{len_enem}}\n"
+
+    for key in keys:
+      output += f" {key:^{len_keys}} | {self.wins[key]:^{len_call}} | {self.losses[key]:^{len_enem}}\n"
+
+    output += "```"
+    return output

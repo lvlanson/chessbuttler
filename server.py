@@ -5,7 +5,7 @@ from lichess.api import ApiHttpError
 from discord.ext import commands
 from poll import Poll
 from utility import String
-from lichesshelper import Tournament, UrlNotValidException, LichessUser
+from lichesshelper import Tournament, UrlNotValidException, LichessUser, VS, UserNotValidException
 
 bot = commands.Bot(command_prefix='!')
 
@@ -29,6 +29,7 @@ async def on_message(message):
   user_roles = [arg.name for arg in user.roles]
   author     = user.name
   author_id  = user.id
+  nickname   = user.display_name
   if user == client.user:
     return
   
@@ -95,10 +96,21 @@ async def on_message(message):
             await message.channel.send(e.message)
           except ApiHttpError:
             await message.channel.send("Etwas scheint mit der URL nicht zu stimmen. Ich finde da kein Turnier.")
+      
+      # Spieler Daten abfragen
       elif cmd.startswith("user"):
         lc_user = cmd[len("user"):].strip()
         lc_user = LichessUser(lc_user)
         await message.channel.send(lc_user.get_data())
+
+      # Versus Daten abfragen
+      elif cmd.startswith("vs"):
+        lc_user = cmd[len("vs"):].strip()
+        try:
+          vc = VS(nickname, lc_user)
+          await message.channel.send(vc.results)
+        except UserNotValidException as e:
+          await message.channel.send(e.message)
 
 
 @bot.command(pass_context=True)
