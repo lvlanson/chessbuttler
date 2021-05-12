@@ -103,6 +103,8 @@ async def on_message(message):
         lc_user = LichessUser(lc_user)
         await message.channel.send(lc_user.get_data())
 
+
+      """
       # Versus Daten abfragen
       elif cmd.startswith("vs"):
         lc_user = cmd[len("vs"):].strip()
@@ -112,6 +114,7 @@ async def on_message(message):
           await message.channel.send(vc.results)
         except UserNotValidException as e:
           await message.channel.send(e.message)
+      """
 
 
 @bot.command(pass_context=True)
