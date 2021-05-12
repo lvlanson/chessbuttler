@@ -116,6 +116,9 @@ async def on_message(message):
           await message.channel.send(e.message)
       """
 
+      """
+      KOMMENTAR
+      """
 
 @bot.command(pass_context=True)
 async def giverole(ctx, user: discord.Member, role: discord.Role):
