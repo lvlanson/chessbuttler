@@ -15,9 +15,9 @@ class Tournament:
         
         # Zeitdatenm zum Turnier
         self.runtime: datetime  = datetime.timedelta(minutes=self.tournament["minutes"])
-        self.date: datetime     = parse(self.tournament["startsAt"])
-        self.endtime: datetime  = (self.date + self.runtime).replace(tzinfo=None)
-
+        self.date: datetime     = parse(self.tournament["startsAt"]) + datetime.timedelta(hours=2)
+        self.endtime: datetime  = (self.date + self.runtime).replace(tzinfo=None) + datetime.timedelta(hours=2)
+ 
     def execution_time(self) -> int:
         """
         Gibt zurück wann das Turnier vom jetzigen Zeitpunkt in Sekunden beendet ist.
