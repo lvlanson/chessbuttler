@@ -14,15 +14,17 @@ class Tournament:
         self.tournament         = lichess.api.tournament(self.t_id)
         
         # Zeitdatenm zum Turnier
-        self.runtime: datetime  = datetime.timedelta(minutes=self.tournament["minutes"])
-        self.date: datetime     = parse(self.tournament["startsAt"]) + datetime.timedelta(hours=2)
-        self.endtime: datetime  = (self.date + self.runtime).replace(tzinfo=None) + datetime.timedelta(hours=2)
+        self.runtime: datetime       = datetime.timedelta(minutes=self.tournament["minutes"])
+        self.date: datetime          = parse(self.tournament["startsAt"])
+        self.endtime: datetime       = (self.date + self.runtime).replace(tzinfo=None)
+        self.date_adjusted: datetime = self.date + datetime.timedelta(hours=2) #UTC+2
  
     def execution_time(self) -> int:
         """
         Gibt zurück wann das Turnier vom jetzigen Zeitpunkt in Sekunden beendet ist.
         """
         now = datetime.datetime.now()
+        print(self.endtime - now)
         exec_time = (self.endtime - now).seconds if (self.endtime-now).total_seconds() > 0 else 0 
         return exec_time
 
@@ -37,7 +39,7 @@ class Tournament:
         description = self.tournament["description"]
       except KeyError:
         bedenkzeit, inkrement = self.__clock()
-        description = f"Start: {self.date.strftime('%d.%m.%Y um %H:%M')}\n"\
+        description = f"Start: {self.date_adjusted.strftime('%d.%m.%Y um %H:%M')}\n"\
                       f"Dauer: {self.__duration}\n"\
                       f"Zeitmodus: {bedenkzeit}\n"\
                       f"Inkrement: {inkrement}"
@@ -80,7 +82,7 @@ class Tournament:
   
     @property
     def startsAt(self) -> str:
-        return f"Das Turnier startet **{self.date.strftime('%d.%m.%Y um %H:%M')}**."
+      return f"Das Turnier startet **{self.date_adjusted.strftime('%d.%m.%Y um %H:%M')}**."
 
     @property
     def results(self) -> list:
